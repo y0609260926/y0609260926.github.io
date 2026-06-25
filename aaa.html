@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>海城市中心医院 - 体检报告单生成器</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --border-color: #bdc3c7;
+            --stamp-color: rgba(231, 76, 60, 0.85);
+        }
+
+        body {
+            font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* 打印及控制面板 */
+        .control-panel {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: right;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* 报告单 A4 容器 */
+        .report-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20mm;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* 医院页眉 */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+        }
+
+        .header .subtitle {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        /* 个人信息区域 */
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 140px;
+            grid-gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-column: span 3;
+            grid-gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .info-item label {
+            font-weight: bold;
+            width: 70px;
+            color: #555;
+        }
+
+        .info-item input {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            padding: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .info-item input:focus {
+            border-bottom-color: #3498db;
+        }
+
+        /* 照片上传区域 */
+        .photo-container {
+            grid-row: span 2;
+            border: 1px dashed var(--border-color);
+            height: 160px;
+            width: 130px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fafafa;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .photo-placeholder {
+            font-size: 12px;
+            color: #95a5a6;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .photo-container input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* 检查指标表格 */
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+            border-left: 4px solid #3498db;
+            padding-left: 8px;
+            margin: 20px 0 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        table input {
+            border: none;
+            width: 100%;
+            height: 100%;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+
+        /* 结论区域 */
+        .conclusion-box {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            min-height: 120px;
+            border-radius: 4px;
+            margin-bottom: 40px;
+        }
+
+        .conclusion-box textarea {
+            width: 100%;
+            height: 100px;
+            border: none;
+            resize: none;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        /* 签名与印章区域 */
+        .footer-sign {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 50px;
+            position: relative;
+        }
+
+        .sign-item {
+            font-size: 14px;
+        }
+
+        .sign-item input {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            width: 120px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* CSS 电子印章 */
+        .stamp-wrapper {
+            position: absolute;
+            right: 40px;
+            bottom: -20px;
+            pointer-events: none; /* 防止遮挡输入框点击 */
+        }
+
+        .official-stamp {
+            width: 120px;
+            height: 120px;
+            border: 3px solid var(--stamp-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transform: rotate(-15deg);
+        }
+
+        .stamp-text {
+            color: var(--stamp-color);
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            line-height: 1.4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 环形文字模拟（简化版，两行居中） */
+        .stamp-center {
+            border-top: 1px solid var(--stamp-color);
+            padding-top: 2px;
+            margin-top: 2px;
+            font-size: 11px;
+        }
+
+        .star {
+            color: var(--stamp-color);
+            font-size: 18px;
+            position: absolute;
+            top: 15px;
+        }
+
+        /* 打印样式适配 */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .control-panel, .photo-placeholder, .photo-container input[type="file"] {
+                display: none !important;
+            }
+            .report-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 10mm;
+            }
+            input, textarea {
+                border-bottom: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <button class="btn" onclick="window.print()">打印报告 / 保存为 PDF</button>
+    </div>
+
+    <div class="report-container">
+        <!-- 页眉 -->
+        <div class="header">
+            <h1>海城市中心医院体检报告单</h1>
+            <div class="subtitle">Haicheng Central Hospital Medical Examination Report</div>
+        </div>
+
+        <!-- 个人信息与照片 -->
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>姓名：</label>
+                    <input type="text" value="张三">
+                </div>
+                <div class="info-item">
+                    <label>性别：</label>
+                    <input type="text" value="男">
+                </div>
+                <div class="info-item">
+                    <label>年龄：</label>
+                    <input type="text" value="24 岁">
+                </div>
+                <div class="info-item">
+                    <label>体检号：</label>
+                    <input type="text" value="HCE2026062501">
+                </div>
+                <div class="info-item">
+                    <label>科室/单位：</label>
+                    <input type="text" value="临床医学部">
+                </div>
+                <div class="info-item">
+                    <label>联系电话：</label>
+                    <input type="text" value="138-xxxx-xxxx">
+                </div>
+            </div>
+            
+            <!-- 照片上传组件 -->
+            <div class="photo-container" id="photoContainer">
+                <div class="photo-placeholder" id="placeholderText">点击此处<br>上传照片</div>
+                <img id="avatarPreview" src="" alt="个人照片">
+                <input type="file" id="photoInput" accept="image/*">
+            </div>
+        </div>
+
+        <!-- 基础体检指标 -->
+        <div class="section-title">一、基础体检指标 (General Indicators)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">检查项目</th>
+                    <th style="width: 25%;">检查结果</th>
+                    <th style="width: 25%;">参考范围</th>
+                    <th style="width: 25%;">单位</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>身高 (Height)</td>
+                    <td><input type="text" value="175"></td>
+                    <td>160 - 185</td>
+                    <td>cm</td>
+                </tr>
+                <tr>
+                    <td>体重 (Weight)</td>
+                    <td><input type="text" value="70"></td>
+                    <td>50 - 85</td>
+                    <td>kg</td>
+                </tr>
+                <tr>
+                    <td>体重指数 (BMI)</td>
+                    <td><input type="text" value="22.8"></td>
+                    <td>18.5 - 23.9</td>
+                    <td>kg/m²</td>
+                </tr>
+                <tr>
+                    <td>收缩压 (SBP)</td>
+                    <td><input type="text" value="120"></td>
+                    <td>90 - 139</td>
+                    <td>mmHg</td>
+                </tr>
+                <tr>
+                    <td>舒张压 (DBP)</td>
+                    <td><input type="text" value="80"></td>
+                    <td>60 - 89</td>
+                    <td>mmHg</td>
+                </tr>
+                <tr>
+                    <td>心率 (Heart Rate)</td>
+                    <td><input type="text" value="75"></td>
+                    <td>60 - 100</td>
+                    <td>次/分</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 体检结论 -->
+        <div class="section-title">二、体检结论与建议 (Conclusion & Recommendations)</div>
+        <div class="conclusion-box">
+            <textarea>总评结论：
+1. 本次基础体检各项生理指标（血压、心率、BMI）均在正常参考范围内。
+2. 建议继续保持良好的作息规律和均衡饮食。
+
+建议：
+定期复查，随诊。</textarea>
+        </div>
+
+        <!-- 签字、日期及印章 -->
+        <div class="footer-sign">
+            <div class="sign-item">
+                主检医生：<input type="text" value="李医生">
+            </div>
+            <div class="sign-item">
+                报告日期：<input type="text" id="reportDate" value="2026-06-25">
+            </div>
+
+            <!-- 印章组件 -->
+            <div class="stamp-wrapper">
+                <div class="official-stamp">
+                    <span class="star">★</span>
+                    <div class="stamp-text">
+                        <div>海城市中心医院<br><span class="stamp-center">体检专用章</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 处理照片上传预览
+        const photoInput = document.getElementById('photoInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const placeholderText = document.getElementById('placeholderText');
+
+        photoInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.src = e.target.result;
+                    avatarPreview.style.display = 'block';
+                    placeholderText.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 自动初始化当前日期
+        const dateInput = document.getElementById('reportDate');
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+    </script>
+</body>
+</html>
