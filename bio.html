@@ -114,6 +114,7 @@
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            position: relative;
         }
 
         .question-title {
@@ -168,8 +169,21 @@
             display: none;
         }
 
-        .show-answers .answer-box {
+        .show-answers .answer-box, .question-card.submitted .answer-box {
             display: block;
+        }
+
+        .btn-submit-q {
+            margin-top: 1rem;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .btn-submit-q:hover {
+            background-color: #34495e;
         }
 
         /* 答题反馈样式 */
@@ -237,7 +251,7 @@
                 <label for="test-count">题目数量：</label>
                 <input type="number" id="test-count" value="20" min="5" max="100" style="width: 70px;">
                 <button class="btn-primary" id="gen-test-btn">生成随机试卷</button>
-                <button class="btn-success" id="submit-test-btn" style="display: none;">提交试卷</button>
+                <button class="btn-success" id="submit-test-btn" style="display: none;">提交整张试卷</button>
             </div>
         </div>
 
@@ -253,8 +267,8 @@
     <script>
         let quizData = [];
         let showAnswers = false;
-        let currentMode = 'browse'; // 'browse' 或 'test'
-        let testQuestions = []; // 存放当前测试卷提取的题目扁平化数组
+        let currentMode = 'browse'; 
+        let testQuestions = []; 
 
         const chapterSelect = document.getElementById('chapter-select');
         const quizContainer = document.getElementById('quiz-container');
@@ -282,7 +296,6 @@
 
         // 2. 初始化应用
         function initApp() {
-            // 填充章节菜单
             chapterSelect.innerHTML = '';
             quizData.forEach((chapterData, index) => {
                 const option = document.createElement('option');
@@ -291,10 +304,8 @@
                 chapterSelect.appendChild(option);
             });
 
-            // 默认渲染第一章
             if (quizData.length > 0) renderChapter(0);
 
-            // 监听模式切换
             document.querySelectorAll('input[name="view-mode"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     currentMode = e.target.value;
@@ -316,7 +327,6 @@
                 });
             });
 
-            // 浏览模式：章节切换与答案显示
             chapterSelect.addEventListener('change', (e) => renderChapter(e.target.value));
             toggleAnswerBtn.addEventListener('click', () => {
                 showAnswers = !showAnswers;
@@ -324,7 +334,6 @@
                 toggleAnswerBtn.textContent = showAnswers ? '隐藏答案' : '显示答案';
             });
 
-            // 测试模式：生成与提交
             genTestBtn.addEventListener('click', generateRandomTest);
             submitTestBtn.addEventListener('click', submitTest);
         }
@@ -375,13 +384,13 @@
             quizContainer.classList.toggle('show-answers', showAnswers);
         }
 
-        // 4. 测试模式：抽取所有题目并乱序抽取
+        // 4. 测试模式：生成随机测试题
         function generateRandomTest() {
             scoreContainer.innerHTML = '';
             quizContainer.innerHTML = '';
             quizContainer.classList.remove('show-answers');
             
-            let allPool = []; // 把所有题目平铺入池子（支持A1/X/B型题子题）
+            let allPool = []; 
             
             quizData.forEach(ch => {
                 ch.sections.forEach(sec => {
@@ -416,22 +425,18 @@
                 return;
             }
 
-            // 随机洗牌算法抽取
             allPool.sort(() => Math.random() - 0.5);
             let count = parseInt(testCountInput.value) || 20;
             testQuestions = allPool.slice(0, Math.min(count, allPool.length));
 
-            // 渲染试卷
             testQuestions.forEach((q, index) => {
                 const qCard = document.createElement('div');
                 qCard.className = 'question-card';
                 qCard.setAttribute('data-index', index);
 
-                // 根据单选/多选设定 input 类别
                 const inputType = q.type === 'X型题' ? 'checkbox' : 'radio';
 
                 const optionsHtml = q.options.map(opt => {
-                    // 截取选项开头的 A/B/C/D/E 标志作为 value 判定标准
                     const match = opt.match(/^([A-E])\b/i) || opt.trim().match(/^([A-E])．/i);
                     const optVal = match ? match[1].toUpperCase() : opt.charAt(0).toUpperCase(); 
                     return `
@@ -446,6 +451,7 @@
                     <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:0.3rem;">来自：${q.chapter}</div>
                     <div class="question-title">${index + 1}. ${q.title}</div>
                     <ul class="options-list">${optionsHtml}</ul>
+                    <button class="btn-submit-q" onclick="checkSingleQuestion(${index})">确定答案</button>
                     <div class="answer-box">正确答案：${q.answer}</div>
                 `;
                 quizContainer.appendChild(qCard);
@@ -454,53 +460,69 @@
             submitTestBtn.style.display = 'inline-block';
         }
 
-        // 5. 测试模式：提交试卷并核对答案
+        // 5. 新增：单题检查逻辑
+        function checkSingleQuestion(index) {
+            const q = testQuestions[index];
+            const qCard = quizContainer.querySelector(`.question-card[data-index="${index}"]`);
+            const checkedInputs = qCard.querySelectorAll(`input[name="q-${index}"]:checked`);
+            
+            let userAnswer = Array.from(checkedInputs).map(i => i.value).sort().join('');
+            let standardAnswer = q.answer.trim().toUpperCase().replace(/[^A-E]/g, '').split('').sort().join('');
+
+            const isCorrect = (userAnswer === standardAnswer);
+            
+            // 清理状态
+            qCard.classList.remove('q-correct', 'q-wrong');
+            const oldFeedback = qCard.querySelector('.feedback-text');
+            if (oldFeedback) oldFeedback.remove();
+
+            // 标记状态
+            qCard.classList.add('submitted'); 
+            const titleEl = qCard.querySelector('.question-title');
+            const feedbackEl = document.createElement('span');
+            feedbackEl.className = 'feedback-text';
+
+            if (isCorrect) {
+                qCard.classList.add('q-correct');
+                feedbackEl.innerHTML = `<span class="text-success">✓ 正确</span>`;
+            } else {
+                qCard.classList.add('q-wrong');
+                feedbackEl.innerHTML = `<span class="text-error">✗ 错误 (你的答案: ${userAnswer || '未答'})</span>`;
+            }
+            titleEl.appendChild(feedbackEl);
+            
+            // 锁定当前题目的选项和提交按钮
+            qCard.querySelectorAll(`input[name="q-${index}"]`).forEach(input => input.disabled = true);
+            qCard.querySelector('.btn-submit-q').disabled = true;
+            qCard.querySelector('.btn-submit-q').style.opacity = '0.5';
+        }
+
+        // 6. 测试模式：整卷提交核对（同时批改未提交的题，并统计总分）
         function submitTest() {
             let correctCount = 0;
 
             testQuestions.forEach((q, index) => {
                 const qCard = quizContainer.querySelector(`.question-card[data-index="${index}"]`);
-                const checkedInputs = qCard.querySelectorAll(`input[name="q-${index}"]:checked`);
                 
-                // 收集用户勾选的答案字母组合并排序（适配多选题）
-                let userAnswer = Array.from(checkedInputs).map(i => i.value).sort().join('');
-                let standardAnswer = q.answer.trim().toUpperCase().replace(/[^A-E]/g, '').split('').sort().join('');
-
-                const isCorrect = (userAnswer === standardAnswer);
-                
-                // 移除历史反馈样式
-                qCard.classList.remove('q-correct', 'q-wrong');
-                const oldFeedback = qCard.querySelector('.feedback-text');
-                if (oldFeedback) oldFeedback.remove();
-
-                // 增加批改样式与文本提示
-                const titleEl = qCard.querySelector('.question-title');
-                const feedbackEl = document.createElement('span');
-                feedbackEl.className = 'feedback-text';
-
-                if (isCorrect) {
-                    correctCount++;
-                    qCard.classList.add('q-correct');
-                    feedbackEl.innerHTML = `<span class="text-success">✓ 正确</span>`;
-                } else {
-                    qCard.classList.add('q-wrong');
-                    feedbackEl.innerHTML = `<span class="text-error">✗ 错误 (你的答案: ${userAnswer || '未答'})</span>`;
+                // 如果用户没有点击单题的“确定答案”，在这里统一触发一次批改
+                if (!qCard.classList.contains('submitted')) {
+                    checkSingleQuestion(index);
                 }
-                titleEl.appendChild(feedbackEl);
+
+                if (qCard.classList.contains('q-correct')) {
+                    correctCount++;
+                }
             });
 
-            // 强制展开所有题目下方的正确答案框
             quizContainer.classList.add('show-answers');
 
-            // 顶端显示得分条
             const scorePercent = Math.round((correctCount / testQuestions.length) * 100);
             scoreContainer.innerHTML = `
                 <div class="score-banner">
-                    测试完成！正确率：<span class="text-success">${correctCount}</span> / ${testQuestions.length} 题 (${scorePercent}%)
+                    测试完成！最终总正确率：<span class="text-success">${correctCount}</span> / ${testQuestions.length} 题 (${scorePercent}%)
                 </div>
             `;
             
-            // 滚动到顶部查看分数
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
