@@ -2,18 +2,29 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>生物化学题库在线复习系统</title>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --accent-color: #3498db;
-            --bg-color: #f8f9fa;
+            --primary-color: #1a365d;
+            --primary-light: #2a4365;
+            --accent-color: #3182ce;
+            --bg-color: #f7fafc;
             --card-bg: #ffffff;
-            --text-color: #333333;
+            --text-color: #2d3748;
+            --text-muted: #718096;
             --border-color: #e2e8f0;
-            --success-color: #2ecc71;
-            --error-color: #e74c3c;
+            --success-color: #38a169;
+            --success-bg: #f0fff4;
+            --error-color: #e53e3e;
+            --error-bg: #fff5f5;
+            --radius: 12px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -26,200 +37,326 @@
         }
 
         header {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
             color: white;
-            padding: 1.5rem;
+            padding: 1.2rem 1rem;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
         .container {
-            max-width: 1000px;
-            margin: 2rem auto;
+            max-width: 800px;
+            margin: 1.5rem auto;
             padding: 0 1rem;
         }
 
+        /* 控制栏优化：自适应网格布局 */
         .controls {
             background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
             display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
+            flex-direction: column;
+            gap: 1.25rem;
         }
 
         .mode-section {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-right: 2px solid var(--border-color);
-            padding-right: 1rem;
+            width: 100%;
+            background: #edf2f7;
+            padding: 0.3rem;
+            border-radius: 8px;
+            gap: 0.2rem;
         }
 
-        select, button, input {
-            padding: 0.6rem 1rem;
-            font-size: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: white;
+        .mode-section label {
+            flex: 1;
+            text-align: center;
+            padding: 0.6rem;
             cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
         }
 
-        select {
-            min-width: 200px;
+        .mode-section label:has(input:checked) {
+            background: var(--card-bg);
+            color: var(--accent-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .mode-section input {
+            display: none; /* 隐藏原生单选框，靠标签底色反馈 */
+        }
+
+        .action-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            width: 100%;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        select, button, input[type="number"] {
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+            width: 100%;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        select:focus, input[type="number"]:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button.btn-primary {
             background-color: var(--accent-color);
             color: white;
-            border: none;
         }
 
-        button.btn-primary:hover {
-            background-color: #2980b9;
-        }
+        button.btn-primary:hover { background-color: #2b6cb0; }
+        button.btn-primary:active { transform: scale(0.98); }
 
         button.btn-success {
             background-color: var(--success-color);
             color: white;
-            border: none;
         }
 
-        button.btn-success:hover {
-            background-color: #27ae60;
-        }
+        button.btn-success:hover { background-color: #2f855a; }
+        button.btn-success:active { transform: scale(0.98); }
 
+        /* 题型模块与卡片视觉升级 */
         .type-section {
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .type-title {
             color: var(--primary-color);
-            border-left: 5px solid var(--accent-color);
-            padding-left: 0.5rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 0.6rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
         }
 
         .question-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            position: relative;
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: var(--transition);
+        }
+
+        .question-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .question-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-weight: 500;
         }
 
         .question-title {
             font-weight: 600;
+            font-size: 1.05rem;
             margin-bottom: 1rem;
-        }
-
-        .options-list {
-            list-style-type: none;
-            padding-left: 0;
-        }
-
-        .options-list li {
-            padding: 0.4rem 0.8rem;
-            margin-bottom: 0.3rem;
-            border-radius: 4px;
-            background: #fdfdfd;
-            border: 1px solid #f0f0f0;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 0.5rem;
         }
 
+        /* 列表与移动端高热区点击优化 */
+        .options-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0 0 1rem 0;
+        }
+
+        .options-list li {
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .options-list li:has(input:checked) {
+            border-color: var(--accent-color);
+            background-color: #f7fafc;
+        }
+
+        .options-list label {
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+
         .options-list input {
+            width: 1.15rem;
+            height: 1.15rem;
             margin: 0;
+            flex-shrink: 0;
             cursor: pointer;
         }
 
+        /* B型题专属精细化样式 */
         .b-group {
-            background: #fcfcfc;
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            background: #fafafa;
+            border: 1px dashed #cbd5e0;
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .shared-options {
-            background: #eef7fc;
+            background: #ebf8ff;
             padding: 1rem;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 1rem;
-            border: 1px solid #d4e6f1;
+            border: 1px solid #bee3f8;
+            font-size: 0.95rem;
+            color: #2b6cb0;
         }
 
         .answer-box {
             margin-top: 1rem;
-            padding: 0.8rem;
-            background-color: #ecf0f1;
-            border-radius: 4px;
-            font-weight: bold;
+            padding: 0.8rem 1rem;
+            background-color: #edf2f7;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
             color: var(--primary-color);
             display: none;
+            border-left: 4px solid var(--text-muted);
         }
 
         .show-answers .answer-box, .question-card.submitted .answer-box {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         .btn-submit-q {
-            margin-top: 1rem;
-            padding: 0.4rem 0.8rem;
+            width: 100%;
+            padding: 0.6rem;
             font-size: 0.9rem;
-            background-color: var(--primary-color);
+            background-color: var(--primary-light);
             color: white;
-            border: none;
+            border-radius: 6px;
         }
 
-        .btn-submit-q:hover {
-            background-color: #34495e;
-        }
-
-        /* 答题反馈样式 */
+        /* 批改样式反馈 */
         .q-correct {
             border: 2px solid var(--success-color) !important;
-            background-color: #f4fbf7;
+            background-color: var(--success-bg);
         }
+        .q-correct .answer-box { border-left-color: var(--success-color); }
 
         .q-wrong {
             border: 2px solid var(--error-color) !important;
-            background-color: #fdf5f5;
+            background-color: var(--error-bg);
         }
+        .q-wrong .answer-box { border-left-color: var(--error-color); }
 
-        .feedback-text {
+        .feedback-tag {
+            font-size: 0.8rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
             font-weight: bold;
-            margin-left: 1rem;
         }
-        .text-success { color: var(--success-color); }
-        .text-error { color: var(--error-color); }
+        .tag-success { background: #c6f6d5; color: #22543d; }
+        .tag-error { background: #fed7d7; color: #742a2a; }
 
         .score-banner {
-            background: #e8f4fd;
-            border: 1px solid var(--accent-color);
-            padding: 1rem;
-            border-radius: 8px;
+            background: #ebf8ff;
+            border: 1px solid #90cdf4;
+            padding: 1.25rem;
+            border-radius: var(--radius);
             margin-bottom: 1.5rem;
-            font-size: 1.2rem;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 700;
             text-align: center;
+            color: #2b6cb0;
+            animation: slideDown 0.4s ease;
         }
 
         .loading {
             text-align: center;
-            font-size: 1.2rem;
-            color: #7f8c8d;
+            font-size: 1.1rem;
+            color: var(--text-muted);
             margin-top: 4rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 响应式平板及桌面端端样式微调 */
+        @media (min-width: 600px) {
+            header h1 { font-size: 1.7rem; }
+            .controls { flex-direction: row; }
+            .mode-section { width: auto; }
+            .action-area { flex-direction: row; flex: 1; }
+            .control-group { width: auto; flex: 1; }
+            select, button { width: auto; }
+            .btn-submit-q { width: auto; padding: 0.6rem 1.2rem; }
+            .b-group { padding: 1.5rem; }
         }
     </style>
 </head>
@@ -233,25 +370,29 @@
         <!-- 控制栏 -->
         <div class="controls">
             <div class="mode-section">
-                <label><input type="radio" name="view-mode" value="browse" checked> 章节浏览模式</label>
-                <label><input type="radio" name="view-mode" value="test"> 随机组卷测试</label>
+                <label><input type="radio" name="view-mode" value="browse" checked>📖 章节浏览</label>
+                <label><input type="radio" name="view-mode" value="test">✍️ 随机测试</label>
             </div>
             
-            <!-- 模式1：浏览模式控制 -->
-            <div id="browse-controls" style="display: flex; gap: 1rem; align-items: center; flex: 1;">
-                <label for="chapter-select">选择章节：</label>
-                <select id="chapter-select">
-                    <option value="">正在加载题库...</option>
-                </select>
-                <button class="btn-primary" id="toggle-answer-btn">显示答案</button>
-            </div>
+            <div class="action-area">
+                <!-- 模式1：浏览模式控制 -->
+                <div id="browse-controls" style="display: flex; gap: 0.75rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
+                    <div class="control-group">
+                        <label for="chapter-select">当前章节</label>
+                        <select id="chapter-select"><option value="">正在加载题库...</option></select>
+                    </div>
+                    <button class="btn-primary" id="toggle-answer-btn" style="height: 45px;">显示答案</button>
+                </div>
 
-            <!-- 模式2：测试模式控制 -->
-            <div id="test-controls" style="display: none; gap: 1rem; align-items: center; flex: 1;">
-                <label for="test-count">题目数量：</label>
-                <input type="number" id="test-count" value="20" min="5" max="100" style="width: 70px;">
-                <button class="btn-primary" id="gen-test-btn">生成随机试卷</button>
-                <button class="btn-success" id="submit-test-btn" style="display: none;">提交整张试卷</button>
+                <!-- 模式2：测试模式控制 -->
+                <div id="test-controls" style="display: none; gap: 0.75rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
+                    <div class="control-group">
+                        <label for="test-count">抽取题量</label>
+                        <input type="number" id="test-count" value="20" min="5" max="100" style="height: 45px;">
+                    </div>
+                    <button class="btn-primary" id="gen-test-btn" style="height: 45px; flex: 1;">开始组卷</button>
+                    <button class="btn-success" id="submit-test-btn" style="display: none; height: 45px; flex: 1;">交卷结分</button>
+                </div>
             </div>
         </div>
 
@@ -260,7 +401,7 @@
 
         <!-- 题目渲染区域 -->
         <div id="quiz-container">
-            <div class="loading">请等待，正在从 questions.json 加载题库数据...</div>
+            <div class="loading">正在努力从 questions.json 加载题库数据...</div>
         </div>
     </div>
 
@@ -281,15 +422,15 @@
         const submitTestBtn = document.getElementById('submit-test-btn');
         const testCountInput = document.getElementById('test-count');
 
-        // 1. 从同目录下的 questions.json 获取数据
+        // 1. 获取数据
         async function loadQuizData() {
             try {
                 const response = await fetch('questions.json');
-                if (!response.ok) throw new Error(`无法读取文件，HTTP 状态码: ${response.status}`);
+                if (!response.ok) throw new Error(`无法读取数据，错误码: ${response.status}`);
                 quizData = await response.json();
                 initApp();
             } catch (error) {
-                quizContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">加载题库失败: ${error.message}</div>`;
+                quizContainer.innerHTML = `<div class="loading" style="color: var(--error-color);">加载题库失败: ${error.message}<br><small style="color:var(--text-muted)">请确保在本地使用 Web 服务器(如 Live Server)环境打开此页</small></div>`;
                 console.error(error);
             }
         }
@@ -322,7 +463,7 @@
                     } else {
                         browseControls.style.display = 'none';
                         testControls.style.display = 'flex';
-                        quizContainer.innerHTML = '<div class="loading">请选择题量并点击“生成随机试卷”按钮开始测试。</div>';
+                        quizContainer.innerHTML = '<div class="loading">💡 请在上方设定题量，并点击“开始组卷”按钮。</div>';
                     }
                 });
             });
@@ -370,7 +511,7 @@
                     section.questions.forEach(q => {
                         const qCard = document.createElement('div');
                         qCard.className = 'question-card';
-                        const optionsHtml = q.options.map(opt => `<li>${opt}</li>`).join('');
+                        const optionsHtml = q.options.map(opt => `<li><label>${opt}</label></li>`).join('');
                         qCard.innerHTML = `
                             <div class="question-title">${q.id}. ${q.title}</div>
                             <ul class="options-list">${optionsHtml}</ul>
@@ -384,7 +525,7 @@
             quizContainer.classList.toggle('show-answers', showAnswers);
         }
 
-        // 4. 测试模式：生成随机测试题
+        // 4. 测试模式：生成试卷
         function generateRandomTest() {
             scoreContainer.innerHTML = '';
             quizContainer.innerHTML = '';
@@ -399,7 +540,7 @@
                             group.sub_questions.forEach(q => {
                                 allPool.push({
                                     type: sec.type,
-                                    title: `(B型题子题) ${q.title}`,
+                                    title: q.title,
                                     options: group.shared_options,
                                     answer: q.answer,
                                     chapter: ch.chapter
@@ -410,7 +551,7 @@
                         sec.questions.forEach(q => {
                             allPool.push({
                                 type: sec.type,
-                                title: `(${sec.type}) ${q.title}`,
+                                title: q.title,
                                 options: q.options,
                                 answer: q.answer,
                                 chapter: ch.chapter
@@ -441,18 +582,20 @@
                     const optVal = match ? match[1].toUpperCase() : opt.charAt(0).toUpperCase(); 
                     return `
                         <li>
-                            <input type="${inputType}" name="q-${index}" value="${optVal}">
-                            <label>${opt}</label>
+                            <label>
+                                <input type="${inputType}" name="q-${index}" value="${optVal}">
+                                <span>${opt}</span>
+                            </label>
                         </li>
                     `;
                 }).join('');
 
                 qCard.innerHTML = `
-                    <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:0.3rem;">来自：${q.chapter}</div>
-                    <div class="question-title">${index + 1}. ${q.title}</div>
+                    <div class="question-meta">${q.chapter} | ${q.type}</div>
+                    <div class="question-title"><span class="q-num">${index + 1}.</span> ${q.title}</div>
                     <ul class="options-list">${optionsHtml}</ul>
                     <button class="btn-submit-q" onclick="checkSingleQuestion(${index})">确定答案</button>
-                    <div class="answer-box">正确答案：${q.answer}</div>
+                    <div class="answer-box">标准答案：${q.answer}</div>
                 `;
                 quizContainer.appendChild(qCard);
             });
@@ -460,7 +603,7 @@
             submitTestBtn.style.display = 'inline-block';
         }
 
-        // 5. 新增：单题检查逻辑
+        // 5. 单题即时批改
         function checkSingleQuestion(index) {
             const q = testQuestions[index];
             const qCard = quizContainer.querySelector(`.question-card[data-index="${index}"]`);
@@ -471,44 +614,40 @@
 
             const isCorrect = (userAnswer === standardAnswer);
             
-            // 清理状态
             qCard.classList.remove('q-correct', 'q-wrong');
-            const oldFeedback = qCard.querySelector('.feedback-text');
+            const oldFeedback = qCard.querySelector('.feedback-tag');
             if (oldFeedback) oldFeedback.remove();
 
-            // 标记状态
             qCard.classList.add('submitted'); 
             const titleEl = qCard.querySelector('.question-title');
             const feedbackEl = document.createElement('span');
-            feedbackEl.className = 'feedback-text';
 
             if (isCorrect) {
                 qCard.classList.add('q-correct');
-                feedbackEl.innerHTML = `<span class="text-success">✓ 正确</span>`;
+                feedbackEl.className = 'feedback-tag tag-success';
+                feedbackEl.textContent = '正确';
             } else {
                 qCard.classList.add('q-wrong');
-                feedbackEl.innerHTML = `<span class="text-error">✗ 错误 (你的答案: ${userAnswer || '未答'})</span>`;
+                feedbackEl.className = 'feedback-tag tag-error';
+                feedbackEl.textContent = `错误 (你选: ${userAnswer || '未答'})`;
             }
-            titleEl.appendChild(feedbackEl);
+            titleEl.insertBefore(feedbackEl, titleEl.firstChild);
             
-            // 锁定当前题目的选项和提交按钮
             qCard.querySelectorAll(`input[name="q-${index}"]`).forEach(input => input.disabled = true);
-            qCard.querySelector('.btn-submit-q').disabled = true;
-            qCard.querySelector('.btn-submit-q').style.opacity = '0.5';
+            const submitBtn = qCard.querySelector('.btn-submit-q');
+            submitBtn.disabled = true;
+            submitBtn.style.display = 'none';
         }
 
-        // 6. 测试模式：整卷提交核对（同时批改未提交的题，并统计总分）
+        // 6. 整卷提交
         function submitTest() {
             let correctCount = 0;
 
             testQuestions.forEach((q, index) => {
                 const qCard = quizContainer.querySelector(`.question-card[data-index="${index}"]`);
-                
-                // 如果用户没有点击单题的“确定答案”，在这里统一触发一次批改
                 if (!qCard.classList.contains('submitted')) {
                     checkSingleQuestion(index);
                 }
-
                 if (qCard.classList.contains('q-correct')) {
                     correctCount++;
                 }
@@ -519,7 +658,7 @@
             const scorePercent = Math.round((correctCount / testQuestions.length) * 100);
             scoreContainer.innerHTML = `
                 <div class="score-banner">
-                    测试完成！最终总正确率：<span class="text-success">${correctCount}</span> / ${testQuestions.length} 题 (${scorePercent}%)
+                    🏁 测试结束！最终得分率：${correctCount} / ${testQuestions.length} 题 (${scorePercent}%)
                 </div>
             `;
             
