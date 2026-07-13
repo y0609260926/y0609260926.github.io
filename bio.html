@@ -13,6 +13,7 @@
             --text-color: #333333;
             --border-color: #e2e8f0;
             --success-color: #2ecc71;
+            --error-color: #e74c3c;
         }
 
         body {
@@ -53,7 +54,15 @@
             align-items: center;
         }
 
-        select, button {
+        .mode-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-right: 2px solid var(--border-color);
+            padding-right: 1rem;
+        }
+
+        select, button, input {
             padding: 0.6rem 1rem;
             font-size: 1rem;
             border: 1px solid var(--border-color);
@@ -64,8 +73,7 @@
         }
 
         select {
-            flex: 1;
-            min-width: 250px;
+            min-width: 200px;
         }
 
         button.btn-primary {
@@ -76,6 +84,16 @@
 
         button.btn-primary:hover {
             background-color: #2980b9;
+        }
+
+        button.btn-success {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+        }
+
+        button.btn-success:hover {
+            background-color: #27ae60;
         }
 
         .type-section {
@@ -114,9 +132,16 @@
             border-radius: 4px;
             background: #fdfdfd;
             border: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* B型题专属样式 */
+        .options-list input {
+            margin: 0;
+            cursor: pointer;
+        }
+
         .b-group {
             background: #fcfcfc;
             border: 2px dashed var(--border-color);
@@ -124,6 +149,7 @@
             padding: 1.5rem;
             margin-bottom: 2rem;
         }
+
         .shared-options {
             background: #eef7fc;
             padding: 1rem;
@@ -138,12 +164,41 @@
             background-color: #ecf0f1;
             border-radius: 4px;
             font-weight: bold;
-            color: var(--success-color);
-            display: none; /* 默认隐藏 */
+            color: var(--primary-color);
+            display: none;
         }
 
         .show-answers .answer-box {
-            display: block; /* 切换显示 */
+            display: block;
+        }
+
+        /* 答题反馈样式 */
+        .q-correct {
+            border: 2px solid var(--success-color) !important;
+            background-color: #f4fbf7;
+        }
+
+        .q-wrong {
+            border: 2px solid var(--error-color) !important;
+            background-color: #fdf5f5;
+        }
+
+        .feedback-text {
+            font-weight: bold;
+            margin-left: 1rem;
+        }
+        .text-success { color: var(--success-color); }
+        .text-error { color: var(--error-color); }
+
+        .score-banner {
+            background: #e8f4fd;
+            border: 1px solid var(--accent-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
         }
 
         .loading {
@@ -157,18 +212,37 @@
 <body>
 
     <header>
-        <h1>生物化学在线题库复习</h1>
+        <h1>生物化学在线题库复习与测试</h1>
     </header>
 
     <div class="container">
         <!-- 控制栏 -->
         <div class="controls">
-            <label for="chapter-select">选择章节：</label>
-            <select id="chapter-select">
-                <option value="">正在加载题库...</option>
-            </select>
-            <button class="btn-primary" id="toggle-answer-btn">显示答案</button>
+            <div class="mode-section">
+                <label><input type="radio" name="view-mode" value="browse" checked> 章节浏览模式</label>
+                <label><input type="radio" name="view-mode" value="test"> 随机组卷测试</label>
+            </div>
+            
+            <!-- 模式1：浏览模式控制 -->
+            <div id="browse-controls" style="display: flex; gap: 1rem; align-items: center; flex: 1;">
+                <label for="chapter-select">选择章节：</label>
+                <select id="chapter-select">
+                    <option value="">正在加载题库...</option>
+                </select>
+                <button class="btn-primary" id="toggle-answer-btn">显示答案</button>
+            </div>
+
+            <!-- 模式2：测试模式控制 -->
+            <div id="test-controls" style="display: none; gap: 1rem; align-items: center; flex: 1;">
+                <label for="test-count">题目数量：</label>
+                <input type="number" id="test-count" value="20" min="5" max="100" style="width: 70px;">
+                <button class="btn-primary" id="gen-test-btn">生成随机试卷</button>
+                <button class="btn-success" id="submit-test-btn" style="display: none;">提交试卷</button>
+            </div>
         </div>
+
+        <!-- 试卷分数通知栏 -->
+        <div id="score-container"></div>
 
         <!-- 题目渲染区域 -->
         <div id="quiz-container">
@@ -179,28 +253,36 @@
     <script>
         let quizData = [];
         let showAnswers = false;
+        let currentMode = 'browse'; // 'browse' 或 'test'
+        let testQuestions = []; // 存放当前测试卷提取的题目扁平化数组
 
         const chapterSelect = document.getElementById('chapter-select');
         const quizContainer = document.getElementById('quiz-container');
         const toggleAnswerBtn = document.getElementById('toggle-answer-btn');
+        const scoreContainer = document.getElementById('score-container');
+        
+        const browseControls = document.getElementById('browse-controls');
+        const testControls = document.getElementById('test-controls');
+        const genTestBtn = document.getElementById('gen-test-btn');
+        const submitTestBtn = document.getElementById('submit-test-btn');
+        const testCountInput = document.getElementById('test-count');
 
         // 1. 从同目录下的 questions.json 获取数据
         async function loadQuizData() {
             try {
                 const response = await fetch('questions.json');
-                if (!response.ok) {
-                    throw new Error(`无法读取文件，HTTP 状态码: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`无法读取文件，HTTP 状态码: ${response.status}`);
                 quizData = await response.json();
                 initApp();
             } catch (error) {
-                quizContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">加载题库失败: ${error.message}<br>请确保在本地搭建了 Web 服务器（如 Live Server）或将文件部署在服务器环境中，直接双击运行 HTML 可能会因浏览器跨域限制(CORS)导致读取失败。</div>`;
+                quizContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">加载题库失败: ${error.message}</div>`;
                 console.error(error);
             }
         }
 
-        // 2. 初始化应用，填充章节下拉菜单
+        // 2. 初始化应用
         function initApp() {
+            // 填充章节菜单
             chapterSelect.innerHTML = '';
             quizData.forEach((chapterData, index) => {
                 const option = document.createElement('option');
@@ -210,58 +292,60 @@
             });
 
             // 默认渲染第一章
-            if (quizData.length > 0) {
-                renderChapter(0);
-            }
+            if (quizData.length > 0) renderChapter(0);
 
-            // 监听章节切换
-            chapterSelect.addEventListener('change', (e) => {
-                renderChapter(e.target.value);
+            // 监听模式切换
+            document.querySelectorAll('input[name="view-mode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentMode = e.target.value;
+                    scoreContainer.innerHTML = '';
+                    quizContainer.classList.remove('show-answers');
+                    showAnswers = false;
+                    toggleAnswerBtn.textContent = '显示答案';
+                    
+                    if (currentMode === 'browse') {
+                        browseControls.style.display = 'flex';
+                        testControls.style.display = 'none';
+                        submitTestBtn.style.display = 'none';
+                        renderChapter(chapterSelect.value || 0);
+                    } else {
+                        browseControls.style.display = 'none';
+                        testControls.style.display = 'flex';
+                        quizContainer.innerHTML = '<div class="loading">请选择题量并点击“生成随机试卷”按钮开始测试。</div>';
+                    }
+                });
             });
 
-            // 监听答案显示切换
+            // 浏览模式：章节切换与答案显示
+            chapterSelect.addEventListener('change', (e) => renderChapter(e.target.value));
             toggleAnswerBtn.addEventListener('click', () => {
                 showAnswers = !showAnswers;
-                if (showAnswers) {
-                    quizContainer.classList.add('show-answers');
-                    toggleAnswerBtn.textContent = '隐藏答案';
-                } else {
-                    quizContainer.classList.remove('show-answers');
-                    toggleAnswerBtn.textContent = '显示答案';
-                }
+                quizContainer.classList.toggle('show-answers', showAnswers);
+                toggleAnswerBtn.textContent = showAnswers ? '隐藏答案' : '显示答案';
             });
+
+            // 测试模式：生成与提交
+            genTestBtn.addEventListener('click', generateRandomTest);
+            submitTestBtn.addEventListener('click', submitTest);
         }
 
-        // 3. 渲染指定章节的所有题型
+        // 3. 浏览模式渲染
         function renderChapter(index) {
             const chapterData = quizData[index];
             if (!chapterData) return;
-
             quizContainer.innerHTML = '';
 
             chapterData.sections.forEach(section => {
                 const sectionEl = document.createElement('div');
                 sectionEl.className = 'type-section';
+                sectionEl.innerHTML = `<h2 class="type-title">${section.type}</h2>`;
 
-                const titleEl = document.createElement('h2');
-                titleEl.className = 'type-title';
-                titleEl.textContent = section.type;
-                sectionEl.appendChild(titleEl);
-
-                // 根据题型结构渲染
                 if (section.type === 'B1型题' || section.type === 'B型题') {
-                    // B型题拥有公用选项组 (groups)
                     section.groups.forEach(group => {
                         const groupEl = document.createElement('div');
                         groupEl.className = 'b-group';
+                        groupEl.innerHTML = `<div class="shared-options"><strong>公用备选答案：</strong><br>${group.shared_options.join('<br>')}</div>`;
 
-                        // 渲染公用选项
-                        const sharedEl = document.createElement('div');
-                        sharedEl.className = 'shared-options';
-                        sharedEl.innerHTML = `<strong>公用备选答案：</strong><br>` + group.shared_options.join('<br>');
-                        groupEl.appendChild(sharedEl);
-
-                        // 渲染子问题
                         group.sub_questions.forEach(q => {
                             const qCard = document.createElement('div');
                             qCard.className = 'question-card';
@@ -274,13 +358,10 @@
                         sectionEl.appendChild(groupEl);
                     });
                 } else {
-                    // A1型题 或 X型题 (直接包含 questions 数组)
                     section.questions.forEach(q => {
                         const qCard = document.createElement('div');
                         qCard.className = 'question-card';
-
                         const optionsHtml = q.options.map(opt => `<li>${opt}</li>`).join('');
-                        
                         qCard.innerHTML = `
                             <div class="question-title">${q.id}. ${q.title}</div>
                             <ul class="options-list">${optionsHtml}</ul>
@@ -289,19 +370,140 @@
                         sectionEl.appendChild(qCard);
                     });
                 }
-
                 quizContainer.appendChild(sectionEl);
             });
-
-            // 切换章节时保持当前的答案显示/隐藏状态
-            if (showAnswers) {
-                quizContainer.classList.add('show-answers');
-            } else {
-                quizContainer.classList.remove('show-answers');
-            }
+            quizContainer.classList.toggle('show-answers', showAnswers);
         }
 
-        // 启动加载
+        // 4. 测试模式：抽取所有题目并乱序抽取
+        function generateRandomTest() {
+            scoreContainer.innerHTML = '';
+            quizContainer.innerHTML = '';
+            quizContainer.classList.remove('show-answers');
+            
+            let allPool = []; // 把所有题目平铺入池子（支持A1/X/B型题子题）
+            
+            quizData.forEach(ch => {
+                ch.sections.forEach(sec => {
+                    if (sec.type === 'B1型题' || sec.type === 'B型题') {
+                        sec.groups.forEach(group => {
+                            group.sub_questions.forEach(q => {
+                                allPool.push({
+                                    type: sec.type,
+                                    title: `(B型题子题) ${q.title}`,
+                                    options: group.shared_options,
+                                    answer: q.answer,
+                                    chapter: ch.chapter
+                                });
+                            });
+                        });
+                    } else {
+                        sec.questions.forEach(q => {
+                            allPool.push({
+                                type: sec.type,
+                                title: `(${sec.type}) ${q.title}`,
+                                options: q.options,
+                                answer: q.answer,
+                                chapter: ch.chapter
+                            });
+                        });
+                    }
+                });
+            });
+
+            if(allPool.length === 0) {
+                quizContainer.innerHTML = '<div class="loading">题库中没有可用的题目。</div>';
+                return;
+            }
+
+            // 随机洗牌算法抽取
+            allPool.sort(() => Math.random() - 0.5);
+            let count = parseInt(testCountInput.value) || 20;
+            testQuestions = allPool.slice(0, Math.min(count, allPool.length));
+
+            // 渲染试卷
+            testQuestions.forEach((q, index) => {
+                const qCard = document.createElement('div');
+                qCard.className = 'question-card';
+                qCard.setAttribute('data-index', index);
+
+                // 根据单选/多选设定 input 类别
+                const inputType = q.type === 'X型题' ? 'checkbox' : 'radio';
+
+                const optionsHtml = q.options.map(opt => {
+                    // 截取选项开头的 A/B/C/D/E 标志作为 value 判定标准
+                    const match = opt.match(/^([A-E])\b/i) || opt.trim().match(/^([A-E])．/i);
+                    const optVal = match ? match[1].toUpperCase() : opt.charAt(0).toUpperCase(); 
+                    return `
+                        <li>
+                            <input type="${inputType}" name="q-${index}" value="${optVal}">
+                            <label>${opt}</label>
+                        </li>
+                    `;
+                }).join('');
+
+                qCard.innerHTML = `
+                    <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:0.3rem;">来自：${q.chapter}</div>
+                    <div class="question-title">${index + 1}. ${q.title}</div>
+                    <ul class="options-list">${optionsHtml}</ul>
+                    <div class="answer-box">正确答案：${q.answer}</div>
+                `;
+                quizContainer.appendChild(qCard);
+            });
+
+            submitTestBtn.style.display = 'inline-block';
+        }
+
+        // 5. 测试模式：提交试卷并核对答案
+        function submitTest() {
+            let correctCount = 0;
+
+            testQuestions.forEach((q, index) => {
+                const qCard = quizContainer.querySelector(`.question-card[data-index="${index}"]`);
+                const checkedInputs = qCard.querySelectorAll(`input[name="q-${index}"]:checked`);
+                
+                // 收集用户勾选的答案字母组合并排序（适配多选题）
+                let userAnswer = Array.from(checkedInputs).map(i => i.value).sort().join('');
+                let standardAnswer = q.answer.trim().toUpperCase().replace(/[^A-E]/g, '').split('').sort().join('');
+
+                const isCorrect = (userAnswer === standardAnswer);
+                
+                // 移除历史反馈样式
+                qCard.classList.remove('q-correct', 'q-wrong');
+                const oldFeedback = qCard.querySelector('.feedback-text');
+                if (oldFeedback) oldFeedback.remove();
+
+                // 增加批改样式与文本提示
+                const titleEl = qCard.querySelector('.question-title');
+                const feedbackEl = document.createElement('span');
+                feedbackEl.className = 'feedback-text';
+
+                if (isCorrect) {
+                    correctCount++;
+                    qCard.classList.add('q-correct');
+                    feedbackEl.innerHTML = `<span class="text-success">✓ 正确</span>`;
+                } else {
+                    qCard.classList.add('q-wrong');
+                    feedbackEl.innerHTML = `<span class="text-error">✗ 错误 (你的答案: ${userAnswer || '未答'})</span>`;
+                }
+                titleEl.appendChild(feedbackEl);
+            });
+
+            // 强制展开所有题目下方的正确答案框
+            quizContainer.classList.add('show-answers');
+
+            // 顶端显示得分条
+            const scorePercent = Math.round((correctCount / testQuestions.length) * 100);
+            scoreContainer.innerHTML = `
+                <div class="score-banner">
+                    测试完成！正确率：<span class="text-success">${correctCount}</span> / ${testQuestions.length} 题 (${scorePercent}%)
+                </div>
+            `;
+            
+            // 滚动到顶部查看分数
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         window.addEventListener('DOMContentLoaded', loadQuizData);
     </script>
 </body>
