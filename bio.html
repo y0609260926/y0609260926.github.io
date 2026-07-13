@@ -36,15 +36,17 @@
             padding: 0;
         }
 
+        /* 顶部 Banner 区域与 DNA 动画结合 */
         header {
             background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
             color: white;
-            padding: 1.2rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
             text-align: center;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
+            overflow: hidden;
         }
 
         header h1 {
@@ -52,6 +54,89 @@
             font-size: 1.4rem;
             font-weight: 600;
             letter-spacing: 0.05em;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* DNA 动画容器 */
+        .dna-container {
+            position: absolute;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            height: 30px;
+            align-items: center;
+            z-index: 1;
+            opacity: 0.8;
+        }
+
+        /* DNA 碱基节点 */
+        .dna-node {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            position: relative;
+            animation: dnaRotate 2.5s infinite ease-in-out;
+        }
+
+        /* 使用不同的延时和伪元素模拟双螺旋结构与连线 */
+        .dna-node::before, .dna-node::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            left: 0;
+        }
+
+        /* 链条 A */
+        .dna-node::before {
+            background-color: #63b3ed;
+            top: -12px;
+            animation: strandA 2.5s infinite ease-in-out;
+            animation-delay: inherit;
+        }
+
+        /* 链条 B */
+        .dna-node::after {
+            background-color: #48bb78;
+            top: 12px;
+            animation: strandB 2.5s infinite ease-in-out;
+            animation-delay: inherit;
+        }
+
+        /* 碱基之间的氢键连线 */
+        .dna-node-line {
+            position: absolute;
+            width: 2px;
+            height: 24px;
+            background: linear-gradient(to bottom, #63b3ed, #48bb78);
+            left: 2px;
+            top: -12px;
+            z-index: -1;
+            transform: scaleY(1);
+            animation: lineStretch 2.5s infinite ease-in-out;
+            animation-delay: inherit;
+            opacity: 0.4;
+        }
+
+        /* 动画关键帧 */
+        @keyframes strandA {
+            0%, 100% { transform: translateY(0) scale(1); z-index: 2; }
+            50% { transform: translateY(24px) scale(0.7); z-index: 1; opacity: 0.6; }
+        }
+
+        @keyframes strandB {
+            0%, 100% { transform: translateY(0) scale(0.7); z-index: 1; opacity: 0.6; }
+            50% { transform: translateY(-24px) scale(1); z-index: 2; }
+        }
+
+        @keyframes lineStretch {
+            0%, 50%, 100% { transform: scaleY(1); }
+            25%, 75% { transform: scaleY(0); }
         }
 
         .container {
@@ -103,7 +188,7 @@
         }
 
         .mode-section input {
-            display: none; /* 隐藏原生单选框，靠标签底色反馈 */
+            display: none; 
         }
 
         .action-area {
@@ -167,7 +252,7 @@
         button.btn-success:hover { background-color: #2f855a; }
         button.btn-success:active { transform: scale(0.98); }
 
-        /* 题型模块与卡片视觉升级 */
+        /* 题型模块与卡片 */
         .type-section {
             margin-bottom: 2.5rem;
         }
@@ -212,7 +297,6 @@
             gap: 0.5rem;
         }
 
-        /* 列表与移动端高热区点击优化 */
         .options-list {
             list-style-type: none;
             padding-left: 0;
@@ -250,7 +334,6 @@
             cursor: pointer;
         }
 
-        /* B型题专属精细化样式 */
         .b-group {
             background: #fafafa;
             border: 1px dashed #cbd5e0;
@@ -295,7 +378,6 @@
             border-radius: 6px;
         }
 
-        /* 批改样式反馈 */
         .q-correct {
             border: 2px solid var(--success-color) !important;
             background-color: var(--success-bg);
@@ -347,9 +429,22 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 响应式平板及桌面端端样式微调 */
         @media (min-width: 600px) {
+            header { padding: 3rem 1rem 1.8rem 1rem; }
             header h1 { font-size: 1.7rem; }
+            .dna-container { top: 0.8rem; height: 40px; gap: 10px;}
+            .dna-node { width: 8px; height: 8px; }
+            .dna-node::before { width: 8px; height: 8px; top: -16px; }
+            .dna-node::after { width: 8px; height: 8px; top: 16px; }
+            .dna-node-line { height: 32px; top: -16px; left: 3px; }
+            @keyframes strandA {
+                0%, 100% { transform: translateY(0) scale(1); z-index: 2; }
+                50% { transform: translateY(32px) scale(0.7); z-index: 1; opacity: 0.6; }
+            }
+            @keyframes strandB {
+                0%, 100% { transform: translateY(0) scale(0.7); z-index: 1; opacity: 0.6; }
+                50% { transform: translateY(-32px) scale(1); z-index: 2; }
+            }
             .controls { flex-direction: row; }
             .mode-section { width: auto; }
             .action-area { flex-direction: row; flex: 1; }
@@ -363,6 +458,8 @@
 <body>
 
     <header>
+        <!-- 动态生成的 DNA 链条将通过 JS 渲染注入到这里 -->
+        <div class="dna-container" id="dna-strand"></div>
         <h1>生物化学在线题库复习与测试</h1>
     </header>
 
@@ -375,7 +472,6 @@
             </div>
             
             <div class="action-area">
-                <!-- 模式1：浏览模式控制 -->
                 <div id="browse-controls" style="display: flex; gap: 0.75rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
                     <div class="control-group">
                         <label for="chapter-select">当前章节</label>
@@ -384,11 +480,10 @@
                     <button class="btn-primary" id="toggle-answer-btn" style="height: 45px;">显示答案</button>
                 </div>
 
-                <!-- 模式2：测试模式控制 -->
                 <div id="test-controls" style="display: none; gap: 0.75rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
                     <div class="control-group">
                         <label for="test-count">抽取题量</label>
-                        <input type="number" id="test-count" value="20" min="5" max="100" style="height: 45px;">
+                        <input type="number" id="test-count" value="40" min="5" max="100" style="height: 45px;">
                     </div>
                     <button class="btn-primary" id="gen-test-btn" style="height: 45px; flex: 1;">开始组卷</button>
                     <button class="btn-success" id="submit-test-btn" style="display: none; height: 45px; flex: 1;">交卷结分</button>
@@ -396,10 +491,8 @@
             </div>
         </div>
 
-        <!-- 试卷分数通知栏 -->
         <div id="score-container"></div>
 
-        <!-- 题目渲染区域 -->
         <div id="quiz-container">
             <div class="loading">正在努力从 questions.json 加载题库数据...</div>
         </div>
@@ -422,15 +515,34 @@
         const submitTestBtn = document.getElementById('submit-test-btn');
         const testCountInput = document.getElementById('test-count');
 
+        // 新增：动态生成并初始化 DNA 双螺旋 Banner 结构
+        function initDnaAnimation() {
+            const dnaStrand = document.getElementById('dna-strand');
+            const nodeCount = 18; // 控制 DNA 链的长度节点数
+            dnaStrand.innerHTML = '';
+            for(let i = 0; i < nodeCount; i++) {
+                const node = document.createElement('div');
+                node.className = 'dna-node';
+                node.style.animationDelay = `${i * -0.15}s`; // 基于负延迟实现连贯的波动传递效果
+                
+                const line = document.createElement('div');
+                line.className = 'dna-node-line';
+                node.appendChild(line);
+                
+                dnaStrand.appendChild(node);
+            }
+        }
+
         // 1. 获取数据
         async function loadQuizData() {
             try {
+                initDnaAnimation(); // 渲染 DNA 特效
                 const response = await fetch('questions.json');
                 if (!response.ok) throw new Error(`无法读取数据，错误码: ${response.status}`);
                 quizData = await response.json();
                 initApp();
             } catch (error) {
-                quizContainer.innerHTML = `<div class="loading" style="color: var(--error-color);">加载题库失败: ${error.message}<br><small style="color:var(--text-muted)">请确保在本地使用 Web 服务器(如 Live Server)环境打开此页</small></div>`;
+                quizContainer.innerHTML = `<div class="loading" style="color: var(--error-color);">加载题库失败: ${error.message}</div>`;
                 console.error(error);
             }
         }
