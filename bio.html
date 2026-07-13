@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生物化学题库在线复习系统</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e2e8f0;
+            --success-color: #2ecc71;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        select, button {
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        button.btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+        }
+
+        button.btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .type-section {
+            margin-bottom: 3rem;
+        }
+
+        .type-title {
+            color: var(--primary-color);
+            border-left: 5px solid var(--accent-color);
+            padding-left: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .question-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .options-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .options-list li {
+            padding: 0.4rem 0.8rem;
+            margin-bottom: 0.3rem;
+            border-radius: 4px;
+            background: #fdfdfd;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* B型题专属样式 */
+        .b-group {
+            background: #fcfcfc;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .shared-options {
+            background: #eef7fc;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border: 1px solid #d4e6f1;
+        }
+
+        .answer-box {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--success-color);
+            display: none; /* 默认隐藏 */
+        }
+
+        .show-answers .answer-box {
+            display: block; /* 切换显示 */
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>生物化学在线题库复习</h1>
+    </header>
+
+    <div class="container">
+        <!-- 控制栏 -->
+        <div class="controls">
+            <label for="chapter-select">选择章节：</label>
+            <select id="chapter-select">
+                <option value="">正在加载题库...</option>
+            </select>
+            <button class="btn-primary" id="toggle-answer-btn">显示答案</button>
+        </div>
+
+        <!-- 题目渲染区域 -->
+        <div id="quiz-container">
+            <div class="loading">请等待，正在从 questions.json 加载题库数据...</div>
+        </div>
+    </div>
+
+    <script>
+        let quizData = [];
+        let showAnswers = false;
+
+        const chapterSelect = document.getElementById('chapter-select');
+        const quizContainer = document.getElementById('quiz-container');
+        const toggleAnswerBtn = document.getElementById('toggle-answer-btn');
+
+        // 1. 从同目录下的 questions.json 获取数据
+        async function loadQuizData() {
+            try {
+                const response = await fetch('questions.json');
+                if (!response.ok) {
+                    throw new Error(`无法读取文件，HTTP 状态码: ${response.status}`);
+                }
+                quizData = await response.json();
+                initApp();
+            } catch (error) {
+                quizContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">加载题库失败: ${error.message}<br>请确保在本地搭建了 Web 服务器（如 Live Server）或将文件部署在服务器环境中，直接双击运行 HTML 可能会因浏览器跨域限制(CORS)导致读取失败。</div>`;
+                console.error(error);
+            }
+        }
+
+        // 2. 初始化应用，填充章节下拉菜单
+        function initApp() {
+            chapterSelect.innerHTML = '';
+            quizData.forEach((chapterData, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = chapterData.chapter;
+                chapterSelect.appendChild(option);
+            });
+
+            // 默认渲染第一章
+            if (quizData.length > 0) {
+                renderChapter(0);
+            }
+
+            // 监听章节切换
+            chapterSelect.addEventListener('change', (e) => {
+                renderChapter(e.target.value);
+            });
+
+            // 监听答案显示切换
+            toggleAnswerBtn.addEventListener('click', () => {
+                showAnswers = !showAnswers;
+                if (showAnswers) {
+                    quizContainer.classList.add('show-answers');
+                    toggleAnswerBtn.textContent = '隐藏答案';
+                } else {
+                    quizContainer.classList.remove('show-answers');
+                    toggleAnswerBtn.textContent = '显示答案';
+                }
+            });
+        }
+
+        // 3. 渲染指定章节的所有题型
+        function renderChapter(index) {
+            const chapterData = quizData[index];
+            if (!chapterData) return;
+
+            quizContainer.innerHTML = '';
+
+            chapterData.sections.forEach(section => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'type-section';
+
+                const titleEl = document.createElement('h2');
+                titleEl.className = 'type-title';
+                titleEl.textContent = section.type;
+                sectionEl.appendChild(titleEl);
+
+                // 根据题型结构渲染
+                if (section.type === 'B1型题' || section.type === 'B型题') {
+                    // B型题拥有公用选项组 (groups)
+                    section.groups.forEach(group => {
+                        const groupEl = document.createElement('div');
+                        groupEl.className = 'b-group';
+
+                        // 渲染公用选项
+                        const sharedEl = document.createElement('div');
+                        sharedEl.className = 'shared-options';
+                        sharedEl.innerHTML = `<strong>公用备选答案：</strong><br>` + group.shared_options.join('<br>');
+                        groupEl.appendChild(sharedEl);
+
+                        // 渲染子问题
+                        group.sub_questions.forEach(q => {
+                            const qCard = document.createElement('div');
+                            qCard.className = 'question-card';
+                            qCard.innerHTML = `
+                                <div class="question-title">${q.id}. ${q.title}</div>
+                                <div class="answer-box">参考答案：${q.answer}</div>
+                            `;
+                            groupEl.appendChild(qCard);
+                        });
+                        sectionEl.appendChild(groupEl);
+                    });
+                } else {
+                    // A1型题 或 X型题 (直接包含 questions 数组)
+                    section.questions.forEach(q => {
+                        const qCard = document.createElement('div');
+                        qCard.className = 'question-card';
+
+                        const optionsHtml = q.options.map(opt => `<li>${opt}</li>`).join('');
+                        
+                        qCard.innerHTML = `
+                            <div class="question-title">${q.id}. ${q.title}</div>
+                            <ul class="options-list">${optionsHtml}</ul>
+                            <div class="answer-box">参考答案：${q.answer}</div>
+                        `;
+                        sectionEl.appendChild(qCard);
+                    });
+                }
+
+                quizContainer.appendChild(sectionEl);
+            });
+
+            // 切换章节时保持当前的答案显示/隐藏状态
+            if (showAnswers) {
+                quizContainer.classList.add('show-answers');
+            } else {
+                quizContainer.classList.remove('show-answers');
+            }
+        }
+
+        // 启动加载
+        window.addEventListener('DOMContentLoaded', loadQuizData);
+    </script>
+</body>
+</html>
