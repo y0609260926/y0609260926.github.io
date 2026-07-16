@@ -36,17 +36,18 @@
             padding: 0;
         }
 
-        /* 顶部 Banner 区域与 DNA 动画结合 */
+        /* 顶部 Banner 区域：采用 3D 视角和溢出隐藏，承载背景动画 */
         header {
             background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
             color: white;
-            padding: 2.5rem 1rem 1.5rem 1rem;
+            padding: 2.5rem 1rem;
             text-align: center;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
             overflow: hidden;
+            perspective: 1000px;
         }
 
         header h1 {
@@ -55,88 +56,116 @@
             font-weight: 600;
             letter-spacing: 0.05em;
             position: relative;
-            z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 5; /* 保证文字在 DNA 背景的上方 */
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
-        /* DNA 动画容器 */
-        .dna-container {
+        /* DNA 隐伏背景容器：斜向从左上到右下放置 */
+        .dna-bg-wrap {
             position: absolute;
-            top: 0.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-            height: 30px;
-            align-items: center;
+            top: -20%;
+            left: -10%;
+            width: 120%;
+            height: 140%;
             z-index: 1;
-            opacity: 0.8;
+            transform: rotate(15deg); /* 倾斜角度，形成从左上到右下的视觉流向 */
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            opacity: 0.25; /* 降低不透明度，使其幽雅地隐伏在背景中 */
         }
 
-        /* DNA 碱基节点 */
-        .dna-node {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
+        /* 双螺旋动画轨道 */
+        .dna-track {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* 碱基对节点 */
+        .dna-pair {
             position: relative;
-            animation: dnaRotate 2.5s infinite ease-in-out;
+            width: 8px;
+            height: 60px; /* 螺旋的最大展宽 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* 使用不同的延时和伪元素模拟双螺旋结构与连线 */
-        .dna-node::before, .dna-node::after {
+        /* 氢键连线（背景微弱可见） */
+        .dna-pair::before {
             content: '';
             position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            left: 0;
-        }
-
-        /* 链条 A */
-        .dna-node::before {
-            background-color: #63b3ed;
-            top: -12px;
-            animation: strandA 2.5s infinite ease-in-out;
-            animation-delay: inherit;
-        }
-
-        /* 链条 B */
-        .dna-node::after {
-            background-color: #48bb78;
-            top: 12px;
-            animation: strandB 2.5s infinite ease-in-out;
-            animation-delay: inherit;
-        }
-
-        /* 碱基之间的氢键连线 */
-        .dna-node-line {
-            position: absolute;
             width: 2px;
-            height: 24px;
-            background: linear-gradient(to bottom, #63b3ed, #48bb78);
-            left: 2px;
-            top: -12px;
-            z-index: -1;
-            transform: scaleY(1);
-            animation: lineStretch 2.5s infinite ease-in-out;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(99, 179, 237, 0.3), rgba(72, 187, 120, 0.3));
+            top: 0;
+            left: 3px;
+            z-index: 1;
+            transform: scaleY(0);
+            animation: bondStretch 3s infinite ease-in-out;
             animation-delay: inherit;
-            opacity: 0.4;
         }
 
-        /* 动画关键帧 */
-        @keyframes strandA {
-            0%, 100% { transform: translateY(0) scale(1); z-index: 2; }
-            50% { transform: translateY(24px) scale(0.7); z-index: 1; opacity: 0.6; }
+        /* 螺旋链上的两个核苷酸节点 */
+        .node-a, .node-b {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
         }
 
-        @keyframes strandB {
-            0%, 100% { transform: translateY(0) scale(0.7); z-index: 1; opacity: 0.6; }
-            50% { transform: translateY(-24px) scale(1); z-index: 2; }
+        .node-a {
+            background-color: #63b3ed; /* 蓝色链 */
+            box-shadow: 0 0 8px #63b3ed;
+            top: 0;
+            animation: orbitA 3s infinite ease-in-out;
+            animation-delay: inherit;
         }
 
-        @keyframes lineStretch {
+        .node-b {
+            background-color: #48bb78; /* 绿色链 */
+            box-shadow: 0 0 8px #48bb78;
+            bottom: 0;
+            animation: orbitB 3s infinite ease-in-out;
+            animation-delay: inherit;
+        }
+
+        /* 3D 旋转与投影动画 */
+        @keyframes orbitA {
+            0%, 100% {
+                transform: translateY(0) scale(1.2);
+                z-index: 3;
+            }
+            50% {
+                transform: translateY(52px) scale(0.6); /* 移动至底端并缩小，模拟往深处转 */
+                z-index: 1;
+                opacity: 0.4;
+            }
+        }
+
+        @keyframes orbitB {
+            0%, 100% {
+                transform: translateY(0) scale(0.6);
+                z-index: 1;
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-52px) scale(1.2); /* 移动至顶端并放大，模拟转至近处 */
+                z-index: 3;
+                opacity: 1;
+            }
+        }
+
+        /* 氢键随碱基距离缩放 */
+        @keyframes bondStretch {
             0%, 50%, 100% { transform: scaleY(1); }
-            25%, 75% { transform: scaleY(0); }
+            25%, 75% { transform: scaleY(0.1); }
         }
 
         .container {
@@ -430,21 +459,8 @@
         }
 
         @media (min-width: 600px) {
-            header { padding: 3rem 1rem 1.8rem 1rem; }
-            header h1 { font-size: 1.7rem; }
-            .dna-container { top: 0.8rem; height: 40px; gap: 10px;}
-            .dna-node { width: 8px; height: 8px; }
-            .dna-node::before { width: 8px; height: 8px; top: -16px; }
-            .dna-node::after { width: 8px; height: 8px; top: 16px; }
-            .dna-node-line { height: 32px; top: -16px; left: 3px; }
-            @keyframes strandA {
-                0%, 100% { transform: translateY(0) scale(1); z-index: 2; }
-                50% { transform: translateY(32px) scale(0.7); z-index: 1; opacity: 0.6; }
-            }
-            @keyframes strandB {
-                0%, 100% { transform: translateY(0) scale(0.7); z-index: 1; opacity: 0.6; }
-                50% { transform: translateY(-32px) scale(1); z-index: 2; }
-            }
+            header { padding: 3.5rem 1rem; }
+            header h1 { font-size: 1.8rem; }
             .controls { flex-direction: row; }
             .mode-section { width: auto; }
             .action-area { flex-direction: row; flex: 1; }
@@ -458,8 +474,10 @@
 <body>
 
     <header>
-        <!-- 动态生成的 DNA 链条将通过 JS 渲染注入到这里 -->
-        <div class="dna-container" id="dna-strand"></div>
+        <!-- DNA 斜切底纹容器 -->
+        <div class="dna-bg-wrap">
+            <div class="dna-track" id="dna-strand"></div>
+        </div>
         <h1>生物化学在线题库复习与测试</h1>
     </header>
 
@@ -483,7 +501,7 @@
                 <div id="test-controls" style="display: none; gap: 0.75rem; align-items: flex-end; width: 100%; flex-wrap: wrap;">
                     <div class="control-group">
                         <label for="test-count">抽取题量</label>
-                        <input type="number" id="test-count" value="40" min="5" max="100" style="height: 45px;">
+                        <input type="number" id="test-count" value="20" min="5" max="100" style="height: 45px;">
                     </div>
                     <button class="btn-primary" id="gen-test-btn" style="height: 45px; flex: 1;">开始组卷</button>
                     <button class="btn-success" id="submit-test-btn" style="display: none; height: 45px; flex: 1;">交卷结分</button>
@@ -515,28 +533,35 @@
         const submitTestBtn = document.getElementById('submit-test-btn');
         const testCountInput = document.getElementById('test-count');
 
-        // 新增：动态生成并初始化 DNA 双螺旋 Banner 结构
+        // 动态填充斜穿背景的 DNA 链条节点
         function initDnaAnimation() {
             const dnaStrand = document.getElementById('dna-strand');
-            const nodeCount = 18; // 控制 DNA 链的长度节点数
+            const nodeCount = 24; // 节点数量，平铺横向
             dnaStrand.innerHTML = '';
             for(let i = 0; i < nodeCount; i++) {
-                const node = document.createElement('div');
-                node.className = 'dna-node';
-                node.style.animationDelay = `${i * -0.15}s`; // 基于负延迟实现连贯的波动传递效果
+                const pair = document.createElement('div');
+                pair.className = 'dna-pair';
+                // 负向延迟使得波形从左向右（配合旋转形成左上到右下的动态流动）
+                pair.style.animationDelay = `${i * -0.18}s`; 
                 
-                const line = document.createElement('div');
-                line.className = 'dna-node-line';
-                node.appendChild(line);
+                const nodeA = document.createElement('div');
+                nodeA.className = 'node-a';
+                nodeA.style.animationDelay = `${i * -0.18}s`;
                 
-                dnaStrand.appendChild(node);
+                const nodeB = document.createElement('div');
+                nodeB.className = 'node-b';
+                nodeB.style.animationDelay = `${i * -0.18}s`;
+
+                pair.appendChild(nodeA);
+                pair.appendChild(nodeB);
+                dnaStrand.appendChild(pair);
             }
         }
 
         // 1. 获取数据
         async function loadQuizData() {
             try {
-                initDnaAnimation(); // 渲染 DNA 特效
+                initDnaAnimation(); 
                 const response = await fetch('questions.json');
                 if (!response.ok) throw new Error(`无法读取数据，错误码: ${response.status}`);
                 quizData = await response.json();
