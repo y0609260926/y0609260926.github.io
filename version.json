@@ -1,0 +1,6 @@
+{
+  "versionCode": 2,
+  "versionName": "1.1.0",
+  "updateLog": "1. 优化 Liquid Glass 导航栏高刷高帧率表现\n2. 修复 WebView 切换 Tab 时的刷新问题\n3. 修复阴影与对齐 Bug",
+  "downloadUrl": "https://y0609260926.github.io/app-release.apk"
+}
