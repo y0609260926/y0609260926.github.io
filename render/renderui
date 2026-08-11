@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Render UI - Explore</title>
+    <!-- 引入拆分后的 CSS 样式表 -->
+    <link rel="stylesheet" href="renderui.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- 页面头部 -->
+        <header class="glass-header">
+            <h1>探索 Liquid UI</h1>
+            <p>网页与 Compose 液态玻璃容器的无缝融合</p>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content-grid">
+            <!-- 1. 硬件交互测试卡片 -->
+            <div class="glass-card">
+                <h2>⚡ 原生硬件触覚</h2>
+                <p>点击下方按钮，跨语言唤起 Android 原生微震动反馈。</p>
+                <button class="glass-btn btn-accent" onclick="handleVibrate()">触发微震动</button>
+            </div>
+
+            <!-- 2. 原生弹窗测试卡片 -->
+            <div class="glass-card">
+                <h2>💬 唤起 GlassDialog</h2>
+                <p>在 H5 侧异步调用 Android Compose 层的液态玻璃模态弹窗。</p>
+                <button class="glass-btn" onclick="handleShowDialog()">唤起原生弹窗</button>
+            </div>
+
+            <!-- 3. 互动答题卡片 -->
+            <div class="glass-card">
+                <h2>📝 测验互动示例</h2>
+                <p>完成选择后触发触觉反馈并将结果回传至 App 原生层。</p>
+                <div class="quiz-options">
+                    <button class="glass-btn option-btn" onclick="submitAnswer('A')">A. Jetpack Compose</button>
+                    <button class="glass-btn option-btn" onclick="submitAnswer('B')">B. RenderEffect 高斯模糊</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JS Bridge 桥接脚本 -->
+    <script>
+        // 1. 封装支持 Promise 的通用 NativeBridge
+        const NativeBridge = {
+            callbackMap: {},
+
+            call(action, payload = {}) {
+                return new Promise((resolve, reject) => {
+                    const callbackId = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+                    this.callbackMap[callbackId] = { resolve, reject };
+
+                    const message = JSON.stringify({ action, payload, callbackId });
+
+                    if (window.AndroidNative) {
+                        window.AndroidNative.postMessage(message);
+                    } else {
+                        console.warn('AndroidNative 未注入，处于普通浏览器调试模式');
+                        // 浏览器本地测试兜底
+                        setTimeout(() => resolve({ status: 'mock_ok' }), 200);
+                    }
+                });
+            },
+
+            // 原生执行完毕后回调此函数
+            onNativeCallback(callbackId, success, data) {
+                if (this.callbackMap[callbackId]) {
+                    const { resolve, reject } = this.callbackMap[callbackId];
+                    if (success) {
+                        resolve(data);
+                    } else {
+                        reject(data);
+                    }
+                    delete this.callbackMap[callbackId];
+                }
+            }
+        };
+
+        // 2. 页面业务逻辑
+        async function handleVibrate() {
+            try {
+                await NativeBridge.call('vibrate');
+            } catch (e) {
+                console.error('震动触发失败:', e);
+            }
+        }
+
+        async function handleShowDialog() {
+            try {
+                await NativeBridge.call('showDialog', {
+                    title: '来自 HTML 的调用',
+                    content: '这是通过 JS Bridge 跨语言调用的 Compose 液态玻璃对话框！'
+                });
+            } catch (e) {
+                console.error('弹窗调用失败:', e);
+            }
+        }
+
+        async function submitAnswer(option) {
+            await handleVibrate();
+            await NativeBridge.call('showDialog', {
+                title: '提交成功',
+                content: `你选择了选项 ${option}，数据已成功传输至 Android 本地。`
+            });
+        }
+    </script>
+</body>
+</html>
