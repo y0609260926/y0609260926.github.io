@@ -1,0 +1,4 @@
+{
+  "showLoginBanner": true,
+  "loginBannerUrl": "https://raw.githubusercontent.com/.../banner.png"
+}
