@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>大外校园卡</title>
+  <!-- 引入 QRCode 库用于生成动态二维码 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      background: #f4f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* 顶部导航栏 */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px;
+    }
+
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .nav-avatar svg {
+      width: 20px;
+      height: 20px;
+      fill: #4b5563;
+    }
+
+    .nav-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1f2937;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 4px 10px;
+    }
+
+    .nav-actions span {
+      font-size: 14px;
+      color: #374151;
+      font-weight: bold;
+    }
+
+    /* 绿色学生卡片 */
+    .student-card {
+      background: linear-gradient(135deg, #48b878 0%, #6ccb93 50%, #90d8a5 100%);
+      border-radius: 16px;
+      padding: 18px 20px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 16px rgba(72, 184, 120, 0.25);
+      height: 190px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .school-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .school-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2e7d32;
+      font-weight: bold;
+      font-size: 11px;
+    }
+
+    .school-text h2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .school-text p {
+      font-size: 7px;
+      opacity: 0.85;
+      letter-spacing: 0.3px;
+    }
+
+    .card-type {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-info {
+      z-index: 2;
+    }
+
+    .user-name {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .user-dept {
+      font-size: 12px;
+      opacity: 0.95;
+      margin-bottom: 2px;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-id {
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    /* 卡片背景建筑装饰 */
+    .tower-decor {
+      position: absolute;
+      right: 18px;
+      bottom: -10px;
+      width: 100px;
+      height: 150px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* 电子码卡片 */
+    .qr-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .qr-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .qr-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .qr-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #1e40af;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+    }
+
+    .arrow-icon {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    /* 动态时间胶囊 */
+    .time-badge-container {
+      display: flex;
+      justify-content: center;
+      margin: 6px 0 16px 0;
+    }
+
+    .time-badge {
+      background-color: #e6f6f9;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 6px 22px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* 二维码区域与水印 */
+    .qr-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 0;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .watermark-bg {
+      position: absolute;
+      width: 140%;
+      height: 140%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-content: space-around;
+      transform: rotate(-30deg);
+      opacity: 0.12;
+      pointer-events: none;
+      user-select: none;
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .qr-border-box {
+      position: relative;
+      padding: 10px;
+      background: #fff;
+      border-radius: 12px;
+      border: 3px solid transparent;
+      background-image: linear-gradient(white, white), linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #06b6d4 100%);
+      background-origin: border-box;
+      background-clip: content-box, border-box;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #qrcode {
+      width: 170px;
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #qrcode img {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* 底部功能栏 */
+    .bottom-bar {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      text-align: center;
+    }
+
+    .bar-item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bar-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 15%;
+      height: 70%;
+      width: 1px;
+      background-color: #f0f0f0;
+    }
+
+    .bar-val {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0d9488;
+    }
+
+    .bar-label {
+      font-size: 12px;
+      color: #4b5563;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 顶部状态栏 -->
+    <header class="nav-bar">
+      <div class="nav-avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <h1 class="nav-title">大外校园卡</h1>
+      <div class="nav-actions">
+        <span>•••</span>
+        <span>⊙</span>
+      </div>
+    </header>
+
+    <!-- 绿色学生卡 -->
+    <section class="student-card">
+      <div class="card-top">
+        <div class="school-info">
+          <div class="school-logo">大外</div>
+          <div class="school-text">
+            <h2>大连外国语大学</h2>
+            <p>Dalian University of Foreign Languages</p>
+          </div>
+        </div>
+        <div class="card-type">
+          <span>•</span> 学生卡
+        </div>
+      </div>
+
+      <div class="user-info">
+        <div class="user-name">王海茹</div>
+        <div class="user-dept">高级翻译学院（现代智能语言服务...）</div>
+        <div class="user-id">250240314</div>
+      </div>
+
+      <!-- 钟楼矢量剪影装饰 -->
+      <svg class="tower-decor" viewBox="0 0 100 150" fill="#ffffff">
+        <path d="M45,10 L55,10 L52,30 L65,35 L65,80 L75,85 L75,150 L25,150 L25,85 L35,80 L35,35 L48,30 Z"/>
+        <rect x="40" y="45" width="20" height="20" rx="10" fill="#48b878"/>
+        <rect x="43" y="95" width="14" height="35" rx="7" fill="#48b878"/>
+      </svg>
+    </section>
+
+    <!-- 电子码区域 -->
+    <section class="qr-card">
+      <div class="qr-header">
+        <div class="qr-title">
+          <div class="qr-icon">码</div>
+          <span>电子码</span>
+        </div>
+        <span class="arrow-icon">▲</span>
+      </div>
+
+      <!-- 实时时间 -->
+      <div class="time-badge-container">
+        <div class="time-badge" id="realtime-clock">--:--:--</div>
+      </div>
+
+      <!-- 二维码与防伪水印 -->
+      <div class="qr-wrapper">
+        <div class="watermark-bg" id="watermark">
+          <!-- 水印由 JS 动态填充 -->
+        </div>
+
+        <div class="qr-border-box">
+          <div id="qrcode"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 底部状态栏 -->
+    <footer class="bottom-bar">
+      <div class="bar-item">
+        <span class="bar-val">0条</span>
+        <span class="bar-label">未读消息</span>
+      </div>
+      <div class="bar-item">
+        <span class="bar-val">查看</span>
+        <span class="bar-label">个人中心</span>
+      </div>
+      <div class="bar-item">
+        <span class="bar-val">0.00</span>
+        <span class="bar-label">小钱包</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 1. 实时时钟更新 (格式: MM-DD HH:mm:ss)
+    function updateClock() {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      const formatted = `${month}-${day} ${hours}:${minutes}:${seconds}`;
+      document.getElementById('realtime-clock').textContent = formatted;
+    }
+
+    // 2. 生成防伪文字背景
+    function initWatermark() {
+      const watermarkEl = document.getElementById('watermark');
+      const text = "王海茹 250240314";
+      let html = '';
+      for (let i = 0; i < 18; i++) {
+        html += `<div>${text}</div>`;
+      }
+      watermarkEl.innerHTML = html;
+    }
+
+    // 3. 生成二维码
+    function initQRCode() {
+      new QRCode(document.getElementById("qrcode"), {
+        text: "https://campuscard.dlufl.edu.cn/code/250240314",
+        width: 170,
+        height: 170,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
+    }
+
+    // 初始化运行
+    initWatermark();
+    initQRCode();
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
