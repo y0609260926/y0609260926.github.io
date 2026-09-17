@@ -1,6 +1,7 @@
 {
   "isAvailable": true,
   "maintenanceMessage": "请稍后再试。",
-  "latestVersion": "1.0.0",
-  "minVersion": "1.0.0"
+  "latestBetaChannelIVersion": "1B002b",
+  "latestBetaChannelPVersion": "0.0.0.1",
+  "minBetaChannelIVersion": "1B002b"
 }
