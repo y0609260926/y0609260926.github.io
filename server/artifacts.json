@@ -1,5 +1,5 @@
 {
-  "showLoginBanner": false,
+  "showLoginBanner": true,
   "loginBannerUrl": "https://y0609260926.github.io/render/artifacts/banner.mp4",
   "allowloginBannerVideoCirculation": true
 }
