@@ -1,0 +1,23 @@
+{
+  "version": "1B010b",
+  "channel": "Beta",
+  "baseUrl": "https://y0609260926.github.io/release/",
+  "releaseNotes": "Empty.",
+  "files": [
+    {
+      "path": "DMUEduClient.exe",
+      "md5": "e3b0c44298fc1c149afbf4c8996fb924",
+      "size": 296448
+    },
+    {
+      "path": "DMUEduClient.dll",
+      "md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "size": 660992
+    },
+    {
+      "path": "NCUtils.Network.dll",
+      "md5": "7b8b965ad4bca0e41ab51de7b31363a1",
+      "size": 32768
+    }
+  ]
+}
