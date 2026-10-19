@@ -1,6 +1,6 @@
 {
-  "isAvailable": true ,
-  "maintenanceMessage": " ",
+  "isAvailable": false,
+  "maintenanceMessage": " 旧教务系统已停用。 ",
   "latestBetaChannelIVersion": "1B010b",
   "latestBetaChannelPVersion": "0.0.0.1",
   "minBetaChannelIVersion": "1B002b"
